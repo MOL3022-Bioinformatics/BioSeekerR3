@@ -29,7 +29,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-row h-screen">
-      <div className="w-2/5 border-r border-gray-300">
+      <div className="w-3/5 border-r border-gray-300">
         <ChatPanel onSequenceSubmit={handleSequenceSubmit} />
       </div>
       <div className="flex-1 relative">

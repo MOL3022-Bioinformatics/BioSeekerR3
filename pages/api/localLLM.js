@@ -1,7 +1,7 @@
 // services/aiService.js
 const AI_MODE = process.env.NEXT_PUBLIC_AI_MODE || 'local';
 
-export async function sendMessageToAI(userMessage) {
+export default async function sendMessageToAI(userMessage) {
   if (AI_MODE === 'local') {
     return sendMessageToLocalLLM(userMessage);
   } else {
@@ -10,18 +10,22 @@ export async function sendMessageToAI(userMessage) {
 }
 
 async function sendMessageToLocalLLM(message) {
-  // Example calling a local endpoint (like Ollama or custom server)
   try {
-    const response = await fetch('http://localhost:11411/api/v1/generate', {
+    const response = await fetch('http://localhost:11434/api/generate', { // Updated port
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: message })
+      body: JSON.stringify({ model: "deepseek-r1:7b", prompt: message })
     });
+
     if (!response.ok) {
-      throw new Error('Local AI request failed');
+      throw new Error(`Local AI request failed: ${response.statusText}`);
     }
+
     const data = await response.json();
-    return data?.reply || '(No reply from local AI)';
+    console.log("AI Response:", data); // Debugging
+
+    // Adjust this based on actual response structure
+    return data?.text || '(No reply from local AI)';
   } catch (err) {
     console.error('Error calling local AI:', err);
     return 'Error: local AI is not reachable';
