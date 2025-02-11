@@ -1,38 +1,33 @@
-// services/aiService.js
-const AI_MODE = process.env.NEXT_PUBLIC_AI_MODE || 'local';
-
-export default async function sendMessageToAI(userMessage) {
-  if (AI_MODE === 'local') {
-    return sendMessageToLocalLLM(userMessage);
-  } else {
-    return sendMessageToCloudAI(userMessage);
+// pages/api/localLLM.js
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-}
 
-async function sendMessageToLocalLLM(message) {
   try {
-    const response = await fetch('http://localhost:11434/api/generate', { // Updated port
+    const { message } = req.body;
+    
+    const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: "deepseek-r1:7b", prompt: message })
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "deepseek-r1:1.5b",
+        prompt: message,
+        stream: false
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`Local AI request failed: ${response.statusText}`);
+      throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("AI Response:", data); // Debugging
+    return res.status(200).json({ reply: data.response });
 
-    // Adjust this based on actual response structure
-    return data?.text || '(No reply from local AI)';
-  } catch (err) {
-    console.error('Error calling local AI:', err);
-    return 'Error: local AI is not reachable';
+  } catch (error) {
+    console.error('Error in local LLM handler:', error);
+    return res.status(500).json({ error: 'Failed to process request' });
   }
-}
-
-async function sendMessageToCloudAI(message) {
-  // Stubbed or real cloud call
-  return `Cloud AI response for: "${message}"`;
 }
