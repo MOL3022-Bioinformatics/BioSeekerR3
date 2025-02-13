@@ -1,23 +1,56 @@
 // services/aiService.js
-const AI_MODE = process.env.NEXT_PUBLIC_AI_MODE || 'local';
 
 export async function sendMessageToAI(message) {
-  if (AI_MODE === 'local') {
-    return callLocalAPI(message);
-  } else {
-    return 'Cloud not implemented in this example';
-  }
-}
-
-async function callLocalAPI(message) {
-  const res = await fetch('/api/localLLM', {
+  const response = await fetch('/api/llm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
+    body: JSON.stringify({ message }),
   });
-  if (!res.ok) {
-    throw new Error('Local AI request failed');
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'AI request failed');
   }
-  const data = await res.json();
-  return data.reply;
+
+  if (!response.headers.get('content-type')?.includes('text/event-stream')) {
+    throw new Error('Expected event stream');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  return {
+    async* [Symbol.asyncIterator]() {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(5));
+                if (data.text) {
+                  yield data.text;
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+  };
+}
+
+export function processCommand(input) {
+  const match = input.match(/^\/(\w+)\s+(.+)/);
+  if (!match) return null;
+  return { command: match[1], args: match[2].trim() };
 }
