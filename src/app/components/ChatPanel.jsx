@@ -112,7 +112,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           const messageStream = await sendMessageToAI(`A protein visualization request was made for UniProt ID: ${args}. Please acknowledge this and be ready to answer questions about this protein.`);
           let fullMessage = '';
           for await (const chunk of messageStream) {
-            fullMessage += chunk;
+            fullMessage += chunk + ' ';
             setCurrentStreamedMessage(fullMessage);
           }
           setChatHistory(prev => [...prev, {
