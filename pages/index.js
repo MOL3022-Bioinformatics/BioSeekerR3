@@ -1,4 +1,3 @@
-// pages/index.js
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatPanel from '../src/app/components/ChatPanel';
@@ -49,10 +48,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)] dark:bg-gray-900 text-[var(--text-color)] dark:text-gray-200">
       {/* Header */}
       <motion.header 
-        className="bg-[var(--chat-bg)] text-[var(--text-color)] py-4 px-6 shadow-lg"
+        className="bg-[var(--chat-bg)] dark:bg-gray-800 text-[var(--text-color)] dark:text-gray-200 py-4 px-6 shadow-lg"
         initial={{ y: -50 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
@@ -63,14 +62,26 @@ export default function Home() {
               <Atom className="h-8 w-8" />
               <h1 className="text-2xl font-bold">Protein Analysis Suite</h1>
             </div>
-            <button
-              onClick={() => setShowSplitView(!showSplitView)}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 
-                       transition-colors text-white flex items-center space-x-2"
-            >
-              <Database className="h-4 w-4" />
-              <span>{showSplitView ? 'Full Chat' : 'Split View'}</span>
+            <div className="flex space-x-4">
+              {/* Dark Mode Toggle Button */}
+              <button
+                onClick={() => {
+                  document.documentElement.classList.toggle("dark");
+                }}
+                className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+              >
+                Toggle Dark Mode
             </button>
+
+              {/* Split View Toggle Button */}
+              <button
+                onClick={() => setShowSplitView(!showSplitView)}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors text-white flex items-center space-x-2"
+              >
+                <Database className="h-4 w-4" />
+                <span>{showSplitView ? 'Full Chat' : 'Split View'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </motion.header>
@@ -93,17 +104,17 @@ export default function Home() {
           <AnimatePresence>
             {showSplitView && (
               <motion.div 
-                className="w-1/2 flex flex-col bg-[var(--chat-bg)] rounded-lg overflow-hidden shadow-xl"
+                className="w-1/2 flex flex-col bg-[var(--chat-bg)] dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl"
                 {...fadeIn}
                 transition={{ duration: 0.3 }}
               >
-                <div className="p-4 bg-[var(--chat-bg)] border-b border-gray-700">
-                  <h2 className="text-xl font-semibold text-[var(--text-color)]">
+                <div className="p-4 bg-[var(--chat-bg)] dark:bg-gray-800 border-b border-gray-700">
+                  <h2 className="text-xl font-semibold text-[var(--text-color)] dark:text-gray-200">
                     Protein Visualization
                   </h2>
                   {currentProtein && (
                     <motion.div 
-                      className="mt-2 text-sm text-[var(--text-color)] opacity-75"
+                      className="mt-2 text-sm text-[var(--text-color)] dark:text-gray-200 opacity-75"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
@@ -114,19 +125,17 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex-1 relative bg-[var(--background)]">
+                <div className="flex-1 relative bg-[var(--background)] dark:bg-gray-900">
                   <AnimatePresence mode="wait">
                     {loading ? (
                       <motion.div 
                         key="loading"
-                        className="absolute inset-0 flex items-center justify-center"
+                        className="absolute inset-0 flex flex-col items-center justify-center space-y-2"
                         {...fadeIn}
-                      >
-                        <div className="text-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
-                          <p className="mt-2 text-[var(--text-color)]">Loading protein data...</p>
-                        </div>
-                      </motion.div>
+                      > 
+                        <Loader2 className="h-10 w-10 animate-spin text-blue-500 mx-auto" />
+                        <p className="mt-2 text-[var(--text-color)] text-sm">Fetching protein metadata...</p>
+                    </motion.div>                    
                     ) : error ? (
                       <motion.div 
                         key="error"
@@ -146,9 +155,14 @@ export default function Home() {
                         {...fadeIn}
                       >
                         <div className="text-center text-[var(--text-color)] opacity-75 p-4">
-                          <Atom className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p className="text-lg">No protein selected</p>
-                          <p className="mt-2">Enter a UniProt ID in the chat to visualize a protein</p>
+                          <Atom className="h-12 w-12 mx-auto mb-3 opacity-50 animate-bounce" />
+                          <p className="text-lg font-semibold">No protein selected</p>
+                          <p className="mt-2">Try searching for a UniProt ID, e.g., <code className="bg-gray-300 text-gray-900 px-2 py-1 rounded">P01308</code> (Insulin)</p>
+                          <button className="mt-3 px-4 py-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition"
+                            onClick={() => handleSequenceSubmit('P01308')}
+                          >
+                            Load Example Protein
+                          </button>
                         </div>
                       </motion.div>
                     ) : (

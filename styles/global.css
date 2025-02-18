@@ -5,15 +5,17 @@
 :root {
   --background: #ffffff;
   --foreground: #212121;
-  --text-color: #ececec;
-  --chat-bg: #303030;
+  --text-color: #212121;
+  --chat-bg: #f0f0f0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #212121;
-    --foreground: #ededed;
-  }
+:root.dark {
+  --background: #212121;
+  --foreground: #ececec;
+  --text-color: #ececec;
+  --chat-bg: #1f2937;
+  --border-color: #303030;
+  --accent-color: #111827;
 }
 
 body {
@@ -24,4 +26,15 @@ body {
 
 * {
   transition: background-color 0.3s, color 0.3s;
+}
+
+.dark-mode .chat-panel {
+  background-color: var(--chat-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .protein-viewer {
+  background-color: var(--background);
+  color: var(--text-color);
+  border-color: var(--border-color);
 }
