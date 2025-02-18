@@ -213,12 +213,11 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
         <p className="text-sm opacity-75">Use /protein [ID] to visualize proteins</p>
       </div>
       <button
-        onClick={() => setShowQuickReference(!showQuickReference)}
-        className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white"
+        onClick={() => setShowQuickReference(true)}
+        className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white shadow-md"
       >
         Quick Reference
       </button>
-
 
       {/* Messages Container - Updated styling */}
       <div 
@@ -277,18 +276,24 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
       </div>
 
       {showQuickReference && (
-        <div className="absolute top-16 right-5 bg-white p-4 shadow-lg rounded-lg w-72">
-          <h3 className="text-lg font-semibold mb-2">Quick Reference</h3>
-          <div className="space-y-2">
-            {Object.entries(quickReferenceCards).map(([key, value]) => (
-              <div key={key} className="border-b border-gray-200 py-2">
-                <strong>{key}:</strong> <p className="text-sm">{value}</p>
-              </div>
-            ))}
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full">
+            <h3 className="text-xl font-semibold mb-4">Quick Reference</h3>
+            <div className="space-y-3">
+              {Object.entries(quickReferenceCards).map(([key, value]) => (
+                <div key={key} className="border-b border-gray-300 py-2">
+                  <strong className="block text-gray-800">{key}:</strong>
+                  <p className="text-sm text-gray-600">{value}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowQuickReference(false)}
+              className="mt-4 w-full text-center text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md"
+            >
+              Close
+            </button>
           </div>
-          <button onClick={() => setShowQuickReference(false)} className="mt-3 text-blue-500">
-            Close
-          </button>
         </div>
       )}
 
