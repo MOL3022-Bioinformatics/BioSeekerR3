@@ -38,3 +38,9 @@ body {
   color: var(--text-color);
   border-color: var(--border-color);
 }
+
+.chat-message {
+  white-space: pre-wrap; /* Ensures spaces and line breaks are preserved */
+  word-wrap: break-word; /* Prevents long words from breaking layout */
+  overflow-wrap: break-word;
+}

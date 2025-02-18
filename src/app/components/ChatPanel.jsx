@@ -21,7 +21,7 @@ const MessageBubble = memo(({ message, type, onCopy, onDelete }) => (
         : 'mr-auto bg-[var(--chat-bg)] text-[var(--text-color)]'
     } shadow-md`}
   >
-    <div className="whitespace-pre-wrap">{message}</div>
+    <div className="chat-message whitespace-pre-wrap break-words">{message}</div>
     {(onCopy || onDelete) && (
       <MessageActions message={message} onCopy={onCopy} onDelete={onDelete} />
     )}
@@ -112,7 +112,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           const messageStream = await sendMessageToAI(`A protein visualization request was made for UniProt ID: ${args}. Please acknowledge this and be ready to answer questions about this protein.`);
           let fullMessage = '';
           for await (const chunk of messageStream) {
-            fullMessage += chunk + ' ';
+            fullMessage += chunk + " ";
             setCurrentStreamedMessage(fullMessage);
           }
           setChatHistory(prev => [...prev, {
@@ -176,7 +176,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           // Filter thinking tags from chunk
           const filteredChunk = filterThinkingTags(chunk);
           if (filteredChunk) {
-            fullMessage += filteredChunk;
+            fullMessage += filteredChunk + " ";
             setCurrentStreamedMessage(fullMessage);
           }
         }
