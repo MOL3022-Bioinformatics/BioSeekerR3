@@ -30,8 +30,8 @@ Built using Next.js, React, and OpenAI API for visualization and chatbot feature
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/your-repository/protein-analysis-suite.git
-cd protein-analysis-suite
+git clone https://github.com/MOL3022-Bioinformatics/BioSeekerR3.git
+cd BioSeekerR3
 ```
 
 ### Install Dependencies
