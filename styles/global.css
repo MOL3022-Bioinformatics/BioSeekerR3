@@ -44,3 +44,37 @@ body {
   word-wrap: break-word; /* Prevents long words from breaking layout */
   overflow-wrap: break-word;
 }
+
+.quick-reference {
+  position: absolute;
+  top: 4rem;
+  right: 1.25rem;
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  width: 18rem;
+  z-index: 100;
+}
+
+.quick-reference h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.quick-reference p {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.quick-reference button {
+  margin-top: 0.75rem;
+  color: #007bff;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.quick-reference button:hover {
+  text-decoration: underline;
+}

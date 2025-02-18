@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { sendMessageToAI } from '../services/aiService';
 import { isUniProtID } from '../services/proteinServices';
+import { quickReferenceCards } from '../../../data/quickReferenceCards';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SendHorizontal, Loader2, AlertCircle, 
@@ -81,6 +82,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const chatContainerRef = useRef(null);
+  const [showQuickReference, setShowQuickReference] = useState(false);
 
   // Improved scroll handling
   const scrollToBottom = useCallback(() => {
@@ -210,6 +212,13 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
         <h2 className="text-lg font-semibold">Protein Analysis Chat</h2>
         <p className="text-sm opacity-75">Use /protein [ID] to visualize proteins</p>
       </div>
+      <button
+        onClick={() => setShowQuickReference(!showQuickReference)}
+        className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white"
+      >
+        Quick Reference
+      </button>
+
 
       {/* Messages Container - Updated styling */}
       <div 
@@ -266,6 +275,22 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           </div>
         )}
       </div>
+
+      {showQuickReference && (
+        <div className="absolute top-16 right-5 bg-white p-4 shadow-lg rounded-lg w-72">
+          <h3 className="text-lg font-semibold mb-2">Quick Reference</h3>
+          <div className="space-y-2">
+            {Object.entries(quickReferenceCards).map(([key, value]) => (
+              <div key={key} className="border-b border-gray-200 py-2">
+                <strong>{key}:</strong> <p className="text-sm">{value}</p>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => setShowQuickReference(false)} className="mt-3 text-blue-500">
+            Close
+          </button>
+        </div>
+      )}
 
       {/* Input Form - Made sticky */}
       <div className="flex-none sticky bottom-0 border-t border-gray-700 bg-[var(--chat-bg)]">
