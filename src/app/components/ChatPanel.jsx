@@ -276,21 +276,25 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
       </div>
 
       {showQuickReference && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full">
-            <h3 className="text-xl font-semibold mb-4">Quick Reference</h3>
+        <div className="quick-reference-modal">
+          <div className="quick-reference-content">
+            <h3>Quick Reference</h3>
             <div className="space-y-3">
               {Object.entries(quickReferenceCards).map(([key, value]) => (
-                <div key={key} className="border-b border-gray-300 py-2">
-                  <strong className="block text-gray-800">{key}:</strong>
-                  <p className="text-sm text-gray-600">{value}</p>
+                <div key={key} className="quick-reference-item">
+                  <strong>{key}</strong>
+                  <p>{value.split("🔍")[0]}</p> {/* Removes emoji from display */}
+                  {value.includes("🔍") && (
+                    <p className="example-question">
+                      {value.split("🔍")[1]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => setShowQuickReference(false)}
-              className="mt-4 w-full text-center text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md"
-            >
+            <button 
+              onClick={() => setShowQuickReference(false)} 
+              className="quick-reference-close">
               Close
             </button>
           </div>
