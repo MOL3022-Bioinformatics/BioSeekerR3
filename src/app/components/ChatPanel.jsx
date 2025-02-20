@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { sendMessageToAI } from '../services/aiService';
 import { isUniProtID } from '../services/proteinServices';
+import { quickReferenceCards } from '../../../data/quickReferenceCards';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SendHorizontal, Loader2, AlertCircle, 
@@ -21,7 +22,7 @@ const MessageBubble = memo(({ message, type, onCopy, onDelete }) => (
         : 'mr-auto bg-[var(--chat-bg)] text-[var(--text-color)]'
     } shadow-md`}
   >
-    <div className="whitespace-pre-wrap">{message}</div>
+    <div className="chat-message whitespace-pre-wrap break-words">{message}</div>
     {(onCopy || onDelete) && (
       <MessageActions message={message} onCopy={onCopy} onDelete={onDelete} />
     )}
@@ -81,6 +82,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const chatContainerRef = useRef(null);
+  const [showQuickReference, setShowQuickReference] = useState(false);
 
   // Improved scroll handling
   const scrollToBottom = useCallback(() => {
@@ -112,7 +114,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           const messageStream = await sendMessageToAI(`A protein visualization request was made for UniProt ID: ${args}. Please acknowledge this and be ready to answer questions about this protein.`);
           let fullMessage = '';
           for await (const chunk of messageStream) {
-            fullMessage += chunk + ' ';
+            fullMessage += chunk + " ";
             setCurrentStreamedMessage(fullMessage);
           }
           setChatHistory(prev => [...prev, {
@@ -176,7 +178,7 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           // Filter thinking tags from chunk
           const filteredChunk = filterThinkingTags(chunk);
           if (filteredChunk) {
-            fullMessage += filteredChunk;
+            fullMessage += filteredChunk + " ";
             setCurrentStreamedMessage(fullMessage);
           }
         }
@@ -210,6 +212,12 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
         <h2 className="text-lg font-semibold">Protein Analysis Chat</h2>
         <p className="text-sm opacity-75">Use /protein [ID] to visualize proteins</p>
       </div>
+      <button
+        onClick={() => setShowQuickReference(true)}
+        className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+      >
+        Quick Reference
+      </button>
 
       {/* Messages Container - Updated styling */}
       <div 
@@ -266,6 +274,32 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           </div>
         )}
       </div>
+
+      {showQuickReference && (
+        <div className="quick-reference-modal">
+          <div className="quick-reference-content">
+            <h3>Quick Reference</h3>
+            <div className="space-y-3">
+              {Object.entries(quickReferenceCards).map(([key, value]) => (
+                <div key={key} className="quick-reference-item">
+                  <strong>{key}</strong>
+                  <p>{value.split("🔍")[0]}</p> {/* Removes emoji from display */}
+                  {value.includes("🔍") && (
+                    <p className="example-question">
+                      {value.split("🔍")[1]}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowQuickReference(false)} 
+              className="quick-reference-close">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input Form - Made sticky */}
       <div className="flex-none sticky bottom-0 border-t border-gray-700 bg-[var(--chat-bg)]">

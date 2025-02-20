@@ -38,3 +38,96 @@ body {
   color: var(--text-color);
   border-color: var(--border-color);
 }
+
+.chat-message {
+  white-space: pre-wrap; /* Ensures spaces and line breaks are preserved */
+  word-wrap: break-word; /* Prevents long words from breaking layout */
+  overflow-wrap: break-word;
+}
+
+/* Quick Reference Modal */
+.quick-reference-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5); /* Darker overlay */
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.quick-reference-content {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 26rem;
+  max-width: 90%;
+  max-height: 80vh; /* Prevents overflow */
+  overflow-y: auto; /* Adds scrollbar if needed */
+}
+
+/* Title Styling */
+.quick-reference-content h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Entry Styling */
+.quick-reference-item {
+  padding: 0.8rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.quick-reference-item:last-child {
+  border-bottom: none;
+}
+
+/* Highlighted Title */
+.quick-reference-item strong {
+  font-size: 1rem;
+  color: #333;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+/* Description */
+.quick-reference-item p {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* Example Question */
+.quick-reference-item .example-question {
+  font-size: 0.85rem;
+  color: #007bff;
+  display: flex;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.quick-reference-item .example-question::before {
+  content: "🔍";
+  margin-right: 0.4rem;
+}
+
+/* Close Button */
+.quick-reference-close {
+  display: block;
+  width: 100%;
+  background: #007bff;
+  color: white;
+  text-align: center;
+  padding: 0.8rem;
+  border-radius: 0.3rem;
+  font-size: 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.quick-reference-close:hover {
+  background: #0056b3;
+}
