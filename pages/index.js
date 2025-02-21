@@ -32,6 +32,8 @@ export default function Home() {
       
       // 3. Ensure split view is active
       setShowSplitView(true);
+
+      return metadata;
     } catch (err) {
       console.error('Error in handleSequenceSubmit:', err);
       setError(err.message || 'Failed to load protein data');
@@ -95,7 +97,7 @@ export default function Home() {
             layout
           >
             <ChatPanel 
-              onSendMessage={(msg) => console.log('Message sent:', msg)}
+              onSendMessage={(msg) => console.log('Message sent 22222:', msg)}
               onProteinVisualize={handleSequenceSubmit}
             />
           </motion.div>
