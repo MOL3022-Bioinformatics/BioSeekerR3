@@ -70,6 +70,9 @@ const processCommand = (input) => {
   return { command: match[1], args: match[2].trim() };
 };
 
+
+
+
 const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) => {
   const [inputValue, setInputValue] = useState('');
   const [currentStreamedMessage, setCurrentStreamedMessage] = useState('');
@@ -84,6 +87,12 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   const chatContainerRef = useRef(null);
   const [showQuickReference, setShowQuickReference] = useState(false);
 
+  const [lastProtein, setLastProtein] = useState(null);
+  const [lastUserMessage, setLastUserMessage] = useState(null);
+  const [lastAIResponse, setLastAIResponse] = useState(null);
+
+
+
   // Improved scroll handling
   const scrollToBottom = useCallback(() => {
     if (chatContainerRef.current) {
@@ -96,30 +105,72 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   }, []);
 
   useEffect(() => {
+    if (chatHistory.length > 1) {
+      const lastAssistantMessage = chatHistory[chatHistory.length - 1];
+      setLastAIResponse(lastAssistantMessage.content);
+    }
+  }, [chatHistory]);
+  
+
+  useEffect(() => {
     scrollToBottom();
   }, [chatHistory, currentStreamedMessage, scrollToBottom]);
   
   const handleCommand = async (command, args) => {
+
     switch (command) {
       case 'protein': {
         if (isUniProtID(args)) {
-          await onProteinVisualize(args);
-          // Add system message about protein visualization
+          const metadata = await onProteinVisualize(args);
+          
+          if (!metadata) { 
+            console.error("❌ Feil: Metadata ble ikke hentet.");
+            //setChatHistory(prev => [...prev, { role: 'assistant', content: "Beklager, jeg klarte ikke å hente protein-informasjon." }]);
+            return;
+          }
+
+          setLastProtein(metadata);
+
+
           const systemMessage = {
             role: 'system',
-            content: `Visualizing protein with UniProt ID: ${args}. This context is now available for future questions.`
+            content: `Visualizing protein with UniProt ID: ${args}.`
           };
           setChatHistory(prev => [...prev, systemMessage]);
-          // Send context to AI
-          const messageStream = await sendMessageToAI(`A protein visualization request was made for UniProt ID: ${args}. Please acknowledge this and be ready to answer questions about this protein.`);
+          
+const messageStream = await sendMessageToAI(
+  `You are a bioinformatics expert, but your main task is to explain biological concepts in a **simple way**. 
+  Assume the reader has **no background in biology**.
+
+  🔬 **Protein Overview:**
+  - **Name**: ${metadata.name}
+  - **Organism**: ${metadata.organism}
+  - **Function**: ${metadata.function}
+  - **Sequence length**: ${metadata.length} amino acids
+  - **PDB structure**: ${metadata.pdbId ? metadata.pdbId : "No structure available"}
+
+  **Explain why this protein is important, how it works, why scientists study it and a funfact.**
+  
+  Keep your explanation **clear, and intuitive**.`, metadata
+);
+          
           let fullMessage = '';
           for await (const chunk of messageStream) {
             fullMessage += chunk + " ";
             setCurrentStreamedMessage(fullMessage);
           }
+
+          // 🔹 Logg hele AI-outputen før rensing
+          //console.log("📝 RAW AI OUTPUT:", fullMessage);
+
+          // ✅ Rens outputen før den legges til chat-historikken
+          const cleanedMessage = cleanText(fullMessage);
+          //console.log("🧼 CLEANED AI OUTPUT:", cleanedMessage);
+
+
           setChatHistory(prev => [...prev, {
             role: 'assistant',
-            content: fullMessage
+            content: cleanedMessage
           }]);
           setCurrentStreamedMessage('');
           return null; // Return null to prevent double message
@@ -146,11 +197,17 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   }, []);
 
   const handleSend = async (e) => {
+
+
+
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
     const trimmedInput = inputValue.trim();
     setError(null);
+
+    // Lagre brukerens siste melding
+    setLastUserMessage(trimmedInput);
     
     // Add user message to chat
     const userMessage = { role: 'user', content: trimmedInput };
@@ -160,8 +217,11 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
 
     try {
       const commandResult = processCommand(trimmedInput);
+
       if (commandResult) {
         const { command, args } = commandResult;
+
+
         const response = await handleCommand(command, args);
         if (response) { // Only add if handleCommand returns a message
           setChatHistory(prev => [...prev, {
@@ -170,8 +230,28 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
           }]);
         }
       } else {
-        // Handle regular chat message with streaming
-        const messageStream = await sendMessageToAI(trimmedInput);
+       
+        // 🔹 Sjekk om vi har en aktiv protein-kontekst
+        const metadata = lastProtein ? lastProtein : null;
+        
+
+        const previousUserMessage = lastUserMessage ? `User previously asked: "${lastUserMessage}".` : "";
+        const previousAIResponse = lastAIResponse ? `AI last respond: "${lastAIResponse}".` : "";
+
+        
+        // Bygg en kontekstuell prompt for AI
+        let prompt = `${previousAIResponse} Now the user asks: "${trimmedInput}".`;   
+       
+        if (metadata) {
+          prompt = `We have been discussing the protein **${metadata.name}** (UniProt ID: ${metadata.id}) from **${metadata.organism}**.
+          It is known for **${metadata.function}**.
+          The sequence length is **${metadata.length} amino acids**.
+          PDB structure: **${metadata.pdbId ? metadata.pdbId : "No structure available"}**.
+          
+          ${previousAIResponse} Now the user asks: "${trimmedInput}".`;
+        }
+
+        const messageStream = await sendMessageToAI(prompt, metadata);
         let fullMessage = '';
         
         for await (const chunk of messageStream) {
@@ -182,12 +262,21 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
             setCurrentStreamedMessage(fullMessage);
           }
         }
+
+        // 🔹 Logg hele AI-outputen før rensing
+        //console.log("📝 RAW AI OUTPUT:", fullMessage);
+
+// ✅ Rens outputen før den legges til chat-historikken
+        const cleanedMessage = cleanText(fullMessage);
+        //console.log("🧼 CLEANED AI OUTPUT:", cleanedMessage);
         
         if (fullMessage) {
+          setLastAIResponse(fullMessage); // 🔹 Lagrer AI sitt svar
           setChatHistory(prev => [...prev, {
             role: 'assistant',
-            content: fullMessage
+            content: cleanedMessage 
           }]);
+          
         }
         setCurrentStreamedMessage('');
       }
@@ -204,6 +293,21 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
       setIsLoading(false);
     }
   };
+  
+
+  function cleanText(text) {
+    return text
+        // 🔹 Fjern dobbelte mellomrom
+      .replace(/\s-\s/g, '-') // 🔹 Korriger feil splittede bindestreker
+      .replace(/\s([.,!?])/g, '$1') // 🔹 Fjern mellomrom før punktum, komma, osv.
+      .replace(/\bIns\sulin\b/gi, 'Insulin') // 🔹 Fikser "Ins ulin" → "Insulin"
+      .replace(/\bsubstrate\s+(\d+)\b/gi, 'substrate $1') // 🔹 Fikser "substrate   1" → "substrate 1"
+      .replace(/\bW\snt\b/gi, 'Wnt') // 🔹 Fikser "W nt" → "Wnt"
+      .replace(/\bmultit\sasking\b/gi, 'multitasking') // 🔹 Fikser "multit asking" → "multitasking"
+      .replace(/\btheWnt\b/gi, 'the Wnt') // 🔹 Fikser "theW nt" → "the Wnt"
+      .trim();
+  }
+  
 
   return (
     <div className="flex flex-col h-full bg-[var(--background)] text-[var(--text-color)] rounded-lg overflow-hidden shadow-xl">

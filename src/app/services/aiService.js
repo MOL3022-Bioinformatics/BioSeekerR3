@@ -1,10 +1,23 @@
 // services/aiService.js
 
-export async function sendMessageToAI(message) {
+export async function sendMessageToAI(message, proteinMetadata = null) {
+  const payload = { message };
+
+  if (proteinMetadata) {
+    payload.metadata = {
+      id: proteinMetadata.id,
+      name: proteinMetadata.name,
+      organism: proteinMetadata.organism,
+      function: proteinMetadata.function,
+      length: proteinMetadata.length,
+      pdbId: proteinMetadata.pdbId ? proteinMetadata.pdbId : "No structure available"
+    };
+  }
+
   const response = await fetch('/api/llm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -48,6 +61,7 @@ export async function sendMessageToAI(message) {
     }
   };
 }
+
 
 export function processCommand(input) {
   const match = input.match(/^\/(\w+)\s+(.+)/);
