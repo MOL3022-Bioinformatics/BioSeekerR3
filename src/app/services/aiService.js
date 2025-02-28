@@ -1,18 +1,21 @@
 // services/aiService.js
 
-export async function sendMessageToAI(message, proteinMetadata = null) {
-  const payload = { message };
+export async function sendMessageToAI(message, contextMessages = [], proteinMetadata = null) {
+  const payload = { message, context: contextMessages };
 
   if (proteinMetadata) {
-    payload.metadata = {
-      id: proteinMetadata.id,
-      name: proteinMetadata.name,
-      organism: proteinMetadata.organism,
-      function: proteinMetadata.function,
-      length: proteinMetadata.length,
-      pdbId: proteinMetadata.pdbId ? proteinMetadata.pdbId : "No structure available"
-    };
+      payload.metadata = {
+          id: proteinMetadata.id,
+          name: proteinMetadata.name,
+          organism: proteinMetadata.organism,
+          function: proteinMetadata.function,
+          length: proteinMetadata.length,
+          pdbId: proteinMetadata.pdbId || "No structure available"
+      };
   }
+
+  //console.log("🔵 [CLIENT] Sender forespørsel til /api/llm:", JSON.stringify(payload, null, 2)); // 🛠 Debugging
+
 
   const response = await fetch('/api/llm', {
     method: 'POST',
@@ -20,46 +23,29 @@ export async function sendMessageToAI(message, proteinMetadata = null) {
     body: JSON.stringify(payload),
   });
 
+  const responseText = await response.text(); // **Leser alltid responsen som tekst først**
+//console.log("🟢 [CLIENT] Rå respons fra API:", responseText); // 🛠 Debugging
+
+
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'AI request failed');
-  }
-
-  if (!response.headers.get('content-type')?.includes('text/event-stream')) {
-    throw new Error('Expected event stream');
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-
-  return {
-    async* [Symbol.asyncIterator]() {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(5));
-                if (data.text) {
-                  yield data.text;
-                }
-              } catch (e) {
-                console.error('Error parsing SSE data:', e);
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
+    console.error("🔴 Feilmelding fra server:", responseText);
+    try {
+        const errorData = JSON.parse(responseText); // **Prøv å tolke JSON**
+        throw new Error(errorData.error || 'AI request failed');
+    } catch (e) {
+        throw new Error(`Uventet respons fra server: ${responseText}`);
     }
-  };
+}
+
+try {
+    const responseData = JSON.parse(responseText); // **Tolker JSON**
+    console.log("🟢 [CLIENT] Parsed AI-svar:", JSON.stringify(responseData, null, 2)); // 🛠 Debugging
+       
+    return responseData.text; // **Returnerer AI-svaret**
+} catch (e) {
+    console.error("⚠️ Kunne ikke parse JSON:", responseText);
+    throw new Error('Feil i responsformatet fra AI-serveren.');
+}
 }
 
 

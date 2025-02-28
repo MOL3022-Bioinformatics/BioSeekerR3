@@ -9,6 +9,8 @@ import {
   MessageSquare, Download, Copy, Trash2 
 } from "lucide-react";
 
+import ReactMarkdown from 'react-markdown';
+
 // Memoized message bubble component to prevent unnecessary re-renders
 const MessageBubble = memo(({ message, type, onCopy, onDelete }) => (
   <motion.div 
@@ -22,7 +24,13 @@ const MessageBubble = memo(({ message, type, onCopy, onDelete }) => (
         : 'mr-auto bg-[var(--chat-bg)] text-[var(--text-color)]'
     } shadow-md`}
   >
-    <div className="chat-message whitespace-pre-wrap break-words">{message}</div>
+    <div className="chat-message whitespace-pre-wrap break-words">
+      <ReactMarkdown components={{
+    ul: ({ node, ...props }) => <ul style={{ marginTop: '-40px' }} {...props} />,
+    li: ({ node, ...props }) => <li style={{ marginBottom: '-25px' }} {...props} />,
+  }}>{message}</ReactMarkdown>
+    </div>
+
     {(onCopy || onDelete) && (
       <MessageActions message={message} onCopy={onCopy} onDelete={onDelete} />
     )}
@@ -117,70 +125,33 @@ const ChatPanel = ({ onSendMessage = () => {}, onProteinVisualize = () => {} }) 
   }, [chatHistory, currentStreamedMessage, scrollToBottom]);
   
   const handleCommand = async (command, args) => {
-
     switch (command) {
       case 'protein': {
         if (isUniProtID(args)) {
           const metadata = await onProteinVisualize(args);
           
           if (!metadata) { 
-            console.error("❌ Feil: Metadata ble ikke hentet.");
-            //setChatHistory(prev => [...prev, { role: 'assistant', content: "Beklager, jeg klarte ikke å hente protein-informasjon." }]);
+            console.error("Feil: Metadata ble ikke hentet.");           
             return;
           }
 
           setLastProtein(metadata);
-
 
           const systemMessage = {
             role: 'system',
             content: `Visualizing protein with UniProt ID: ${args}.`
           };
           setChatHistory(prev => [...prev, systemMessage]);
-          
-const messageStream = await sendMessageToAI(
-  `You are a bioinformatics expert, but your main task is to explain biological concepts in a **simple way**. 
-  Assume the reader has **no background in biology**.
 
-  🔬 **Protein Overview:**
-  - **Name**: ${metadata.name}
-  - **Organism**: ${metadata.organism}
-  - **Function**: ${metadata.function}
-  - **Sequence length**: ${metadata.length} amino acids
-  - **PDB structure**: ${metadata.pdbId ? metadata.pdbId : "No structure available"}
-
-  **Explain why this protein is important, how it works, why scientists study it and a funfact.**
-  
-  Keep your explanation **clear, and intuitive**.`, metadata
-);
-          
-          let fullMessage = '';
-          for await (const chunk of messageStream) {
-            fullMessage += chunk + " ";
-            setCurrentStreamedMessage(fullMessage);
-          }
-
-          // 🔹 Logg hele AI-outputen før rensing
-          //console.log("📝 RAW AI OUTPUT:", fullMessage);
-
-          // ✅ Rens outputen før den legges til chat-historikken
-          const cleanedMessage = cleanText(fullMessage);
-          //console.log("🧼 CLEANED AI OUTPUT:", cleanedMessage);
-
-
-          setChatHistory(prev => [...prev, {
-            role: 'assistant',
-            content: cleanedMessage
-          }]);
-          setCurrentStreamedMessage('');
-          return null; // Return null to prevent double message
+          return metadata; 
         }
         throw new Error('Invalid UniProt ID format');
       }
       default:
         throw new Error(`Unknown command: ${command}`);
     }
-  };
+};
+
 
   const filterThinkingTags = (text) => {
     // Remove <think> tags and their content
@@ -197,103 +168,97 @@ const messageStream = await sendMessageToAI(
   }, []);
 
   const handleSend = async (e) => {
-
-
-
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const trimmedInput = inputValue.trim();
+    let trimmedInput = inputValue.trim();
     setError(null);
-
-    // Lagre brukerens siste melding
-    setLastUserMessage(trimmedInput);
-    
-    // Add user message to chat
-    const userMessage = { role: 'user', content: trimmedInput };
-    setChatHistory(prev => [...prev, userMessage]);
-    setInputValue('');
     setIsLoading(true);
 
+   
+    setChatHistory(prev => {
+        const updatedHistory = [...prev, { role: 'user', content: trimmedInput }];        
+        return updatedHistory;
+    });
+    setInputValue('');
+
     try {
+       
       const commandResult = processCommand(trimmedInput);
+        let metadata = null;
 
-      if (commandResult) {
-        const { command, args } = commandResult;
+        if (commandResult) {
+            const { command, args } = commandResult;
 
+            if (command === 'protein') {
+                metadata = await handleCommand(command, args); // **Henter metadata**
 
-        const response = await handleCommand(command, args);
-        if (response) { // Only add if handleCommand returns a message
-          setChatHistory(prev => [...prev, {
-            role: 'assistant',
-            content: response
-          }]);
-        }
-      } else {
-       
-        // 🔹 Sjekk om vi har en aktiv protein-kontekst
-        const metadata = lastProtein ? lastProtein : null;
-        
+                if (metadata) {
+                    // 🎯 **Oppdater trimmedInput til å sende proteininformasjon til AI**
+                    trimmedInput = `🔬 **Protein Overview:**
+- **Name**: ${metadata.name}
+- **Organism**: ${metadata.organism}
+- **Function**: ${metadata.function}
+- **Sequence length**: ${metadata.length} amino acids
+- **PDB structure**: ${metadata.pdbId ? metadata.pdbId : "No structure available"}
 
-        const previousUserMessage = lastUserMessage ? `User previously asked: "${lastUserMessage}".` : "";
-        const previousAIResponse = lastAIResponse ? `AI last respond: "${lastAIResponse}".` : "";
-
-        
-        // Bygg en kontekstuell prompt for AI
-        let prompt = `${previousAIResponse} Now the user asks: "${trimmedInput}".`;   
-       
-        if (metadata) {
-          prompt = `We have been discussing the protein **${metadata.name}** (UniProt ID: ${metadata.id}) from **${metadata.organism}**.
-          It is known for **${metadata.function}**.
-          The sequence length is **${metadata.length} amino acids**.
-          PDB structure: **${metadata.pdbId ? metadata.pdbId : "No structure available"}**.
-          
-          ${previousAIResponse} Now the user asks: "${trimmedInput}".`;
+**Explain why this protein is important, how it works, why scientists study it, and a fun fact.**  
+Keep your explanation **clear and intuitive**.`;
+                }
+            }
         }
 
-        const messageStream = await sendMessageToAI(prompt, metadata);
-        let fullMessage = '';
+        let filteredContext = chatHistory
+            .slice(-5) // Kun de siste 5 meldingene for å holde samtalen relevant
+            .filter((msg, index, self) =>
+                index === self.findIndex((m) => m.role === msg.role && m.content === msg.content)
+            );
+
         
-        for await (const chunk of messageStream) {
-          // Filter thinking tags from chunk
-          const filteredChunk = filterThinkingTags(chunk);
-          if (filteredChunk) {
-            fullMessage += filteredChunk + " ";
-            setCurrentStreamedMessage(fullMessage);
-          }
+
+        
+        if (lastAIResponse && lastAIResponse.trim()) {
+            filteredContext.push({
+                role: "system",
+                content: `The user is responding to your previous question: "${lastAIResponse}". 
+                          Please provide a direct answer before asking new questions. Stay on topic.`
+            });
         }
 
-        // 🔹 Logg hele AI-outputen før rensing
-        //console.log("📝 RAW AI OUTPUT:", fullMessage);
-
-// ✅ Rens outputen før den legges til chat-historikken
-        const cleanedMessage = cleanText(fullMessage);
-        //console.log("🧼 CLEANED AI OUTPUT:", cleanedMessage);
         
-        if (fullMessage) {
-          setLastAIResponse(fullMessage); // 🔹 Lagrer AI sitt svar
-          setChatHistory(prev => [...prev, {
-            role: 'assistant',
-            content: cleanedMessage 
-          }]);
-          
-        }
-        setCurrentStreamedMessage('');
+        filteredContext.push({ role: 'user', content: trimmedInput });
+
+        const proteinContext = metadata || lastProtein;
+        if (proteinContext) { 
+          filteredContext.push({
+              role: "system",
+              content: `We are discussing the protein **${proteinContext.name}** (UniProt ID: ${proteinContext.id}) from **${proteinContext.organism}**.
+              - Function: ${proteinContext.function}
+              - Length: ${proteinContext.length} amino acids
+              - PDB structure: ${proteinContext.pdbId ? proteinContext.pdbId : "No structure available"}
+
+              Stay on topic and answer user questions related to this protein first before introducing new concepts.`
+          });
       }
-      
-      onSendMessage(trimmedInput);
-    } catch (error) {
-      console.error('Error in chat handling:', error);
-      setError(error.message || 'An error occurred while processing your request');
-      setChatHistory(prev => [...prev, {
-        role: 'assistant',
-        content: `Error: ${error.message || 'Failed to process your request. Please try again.'}`
-      }]);
+        
+        // 🎯 **Send til AI**
+        const responseMessage = await sendMessageToAI(trimmedInput, filteredContext, proteinContext);
+
+        // 🎯 **Oppdater chatten med AI-svaret**
+        setChatHistory(prev => {
+            const updatedHistory = [...prev, { role: 'assistant', content: responseMessage }];
+            return updatedHistory;
+        });
+        setLastAIResponse(responseMessage); // 🎯 Husk siste AI-svar
+    } catch (error) {       
+        setError(error.message || 'An error occurred while processing your request');
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
-  
+};
+
+
+
 
   function cleanText(text) {
     return text

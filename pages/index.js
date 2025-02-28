@@ -97,7 +97,7 @@ export default function Home() {
             layout
           >
             <ChatPanel 
-              onSendMessage={(msg) => console.log('Message sent 22222:', msg)}
+              onSendMessage={(msg) => console.log('Message sent:', msg)}
               onProteinVisualize={handleSequenceSubmit}
             />
           </motion.div>

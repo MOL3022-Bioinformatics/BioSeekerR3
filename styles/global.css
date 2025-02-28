@@ -43,6 +43,7 @@ body {
   white-space: pre-wrap; /* Ensures spaces and line breaks are preserved */
   word-wrap: break-word; /* Prevents long words from breaking layout */
   overflow-wrap: break-word;
+  padding: 0px;
 }
 
 /* Quick Reference Modal */

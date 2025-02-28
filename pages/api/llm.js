@@ -45,7 +45,9 @@ export default async function handler(req) {
 
   try {
     const body = await req.json();
-    const { message } = body;
+    console.log("🔵 [SERVER] Mottatt forespørsel:", body);
+
+    const { message, context, metadata } = body;
     
     if (!message) {
       return new Response(
@@ -74,10 +76,12 @@ export default async function handler(req) {
     of your text—and always maintain a supportive and encouraging tone, being patient and empathetic as you guide the user 
     through their learning journey.`;
 
+
     const messages = [
       { role: "system", content: systemPrompt },
+      ...(Array.isArray(context) ? context : []) 
     ];
-
+    
     if (message.includes('protein') || message.toLowerCase().includes('structure')) {
       messages.push({ 
         role: "system", 
@@ -87,87 +91,37 @@ export default async function handler(req) {
 
     messages.push({ role: "user", content: message });
 
-    const encoder = new TextEncoder();
-    const stream = new TransformStream();
-    const writer = stream.writable.getWriter();
-
     let response;
     if (aiMode === 'local') {
       response = await streamOllama(model, messages);
     } else {
-      response = await streamOpenAI(model, messages, process.env.OPENAI_API_KEY);
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({ model, messages }),
+      });
     }
 
     if (!response.ok) {
-      throw new Error(`AI service returned ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`AI service error: ${errorText}`);
     }
 
-    const reader = response.body.getReader();
+    const responseData = await response.json();
+   
 
-    (async () => {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          let text;
-          if (aiMode === 'local') {
-            const chunks = new TextDecoder().decode(value).split('\n');
-            for (const chunk of chunks) {
-              if (chunk.trim()) {
-                try {
-                  const parsed = JSON.parse(chunk);
-                  text = parsed.message?.content || '';
-                  text = text.replace(/<think>.*?<\/think>/gs, '')
-                           .replace(/<\/?think>/g, '')
-                           .trim();
-                  if (text) {
-                    await writer.write(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-                  }
-                } catch (e) {
-                  console.error('Error parsing chunk:', e);
-                }
-              }
-            }
-          } else {
-            const chunks = new TextDecoder().decode(value).split('\n');
-            for (const chunk of chunks) {
-              if (chunk.startsWith('data: ') && chunk.trim() !== 'data: [DONE]') {
-                try {
-                  const parsed = JSON.parse(chunk.slice(6));
-                  text = parsed.choices[0]?.delta?.content || '';
-                  if (text) {
-                    await writer.write(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-                  }
-                } catch (e) {
-                  console.error('Error parsing chunk:', e);
-                }
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Stream error:', error);
-      } finally {
-        await writer.close();
-      }
-    })();
-
-    return new Response(stream.readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+    
+    return new Response(JSON.stringify({ text: responseData.choices?.[0]?.message?.content || "No response from AI" }), {
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in LLM handler:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Failed to process request' }), 
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    console.error('🔴 [SERVER] Error i LLM handler:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Failed to process request' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
