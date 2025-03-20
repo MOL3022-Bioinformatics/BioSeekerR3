@@ -4,14 +4,14 @@ export const config = {
 };
 
 const streamOllama = async (model, messages) => {
-  const url = process.env.OLLAMA_HOST + "/api/generate";
+  const url = process.env.OLLAMA_URL + "/api/generate";
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
       messages,
-      stream: false,
+      stream: true,
     }),
   });
   return response;

@@ -67,7 +67,7 @@ Create a .env file in the project root and add the following required variables:
 AI_MODE=                           # 'local' or 'remote'
 AI_MODEL=                          # local example: 'llama3.2:1b'. remote example: 'gpt-4o'.
 
-OLLAMA_HOST=http://localhost:11434 # This is the default URI to access Ollama
+OLLAMA_URL=http://localhost:11434  # This is the default URI to access Ollama
 OPENAI_API_KEY=your_key_here       # required only if AI_MODE=remote
 
 # Set this to true if running Ollama on a different machine
