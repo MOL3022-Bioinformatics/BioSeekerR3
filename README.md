@@ -28,6 +28,24 @@ Built using Next.js, React, and OpenAI API for visualization and chatbot feature
 
 ## Getting Started
 
+### Prerequisites & Requirements
+Before setting up the project, ensure your system meets the following requirements:
+
+1. System Requirements
+- Operating System: Windows, macOS, or Linux
+- Node.js: v18+ (Recommended)
+- Package Manager: npm (comes with Node.js) or yarn
+- Git
+
+2. AI Model Requirements
+You need either:
+- Ollama (Local AI model)
+  - Install Ollama: Ollama Installation Guide: https://github.com/ollama/ollama
+  - Ensure it is running at http://localhost:11434
+- OpenAI API (Remote AI model)
+  - Get an OpenAI API Key: OpenAI Platform
+  - Set AI_MODE=remote and provide your API key in .env.local
+
 ### Clone the Repository
 ```bash
 git clone https://github.com/MOL3022-Bioinformatics/BioSeekerR3.git
@@ -67,7 +85,6 @@ NEXT_PUBLIC_API_URL=http://localhost:11434/api/generate # adjust as needed
 
 #### Important
 - If running locally with Ollama, ensure it is installed and accessible at the specified OLLAMA_HOST.
-  - To read more about installing Ollama check out its GitHub: https://github.com/ollama/ollama
 - If using OpenAI, you must set AI_MODE=remote and provide a valid OPENAI_API_KEY.
 - Never expose your .env file in public repositories.
 - Make sure to never expose your OpenAI API key in a public repository.
