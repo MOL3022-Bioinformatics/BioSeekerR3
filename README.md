@@ -64,17 +64,15 @@ Create a .env file in the project root and add the following required variables:
 
 ```ini
 # AI Configuration
-AI_MODE=local                      # or 'remote'
-AI_MODEL=llama3.2:1b          # for local, or appropriate OpenAI model for remote
-OLLAMA_HOST=http://localhost:11434 # URI to access Ollama
-OPENAI_API_KEY=your_key_here       # required only if AI_MODE=remote
-
-# System Configuration
-NEXT_PUBLIC_API_URL=http://localhost:11434/api/generate # adjust as needed
+AI_MODE=remote                      # or 'remote'
+AI_MODEL=gpt-3.5-turbo              # for local, or appropriate OpenAI model for remote
+OLLAMA_HOST=http://localhost:11434  # URI to access Ollama
+OPENAI_API_KEY=sk-...               # required only if AI_MODE=remote
 
 # Set this to true if running Ollama on a different machine
 # OLLAMA_INSECURE=true
 ```
+
 #### Explanation of Variables:
 - AI_MODE: Determines whether to use a local AI model (local) or a remote OpenAI model (remote).
 - AI_MODEL: Defines the AI model to use. If using local, specify an Ollama model. If using remote, enter the OpenAI model name.
