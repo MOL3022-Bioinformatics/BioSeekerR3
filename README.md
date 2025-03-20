@@ -41,6 +41,37 @@ npm install
 yarn install
 ```
 
+### Configure Environment Variables
+Create a .env file in the project root and add the following required variables:
+
+```ini
+# AI Configuration
+AI_MODE=local                      # or 'remote'
+AI_MODEL=llama3.2:1b          # for local, or appropriate OpenAI model for remote
+OLLAMA_HOST=http://localhost:11434 # URI to access Ollama
+OPENAI_API_KEY=your_key_here       # required only if AI_MODE=remote
+
+# System Configuration
+NEXT_PUBLIC_API_URL=http://localhost:11434/api/generate # adjust as needed
+
+# Set this to true if running Ollama on a different machine
+# OLLAMA_INSECURE=true
+```
+#### Explanation of Variables:
+- AI_MODE: Determines whether to use a local AI model (local) or a remote OpenAI model (remote).
+- AI_MODEL: Defines the AI model to use. If using local, specify an Ollama model. If using remote, enter the OpenAI model name.
+- OLLAMA_HOST: The URI where Ollama is hosted (default: http://localhost:11434).
+- OPENAI_API_KEY: Only required if AI_MODE=remote; provides access to OpenAI's API.
+- NEXT_PUBLIC_API_URL: The API endpoint used for AI-generated responses.
+- OLLAMA_INSECURE: Set to true if running Ollama on another machine where HTTPS isn't configured.
+
+#### Important
+- If running locally with Ollama, ensure it is installed and accessible at the specified OLLAMA_HOST.
+  - To read more about installing Ollama check out its GitHub: https://github.com/ollama/ollama
+- If using OpenAI, you must set AI_MODE=remote and provide a valid OPENAI_API_KEY.
+- Never expose your .env file in public repositories.
+- Make sure to never expose your OpenAI API key in a public repository.
+
 ### Run the Development server
 ```bash
 npm run dev
