@@ -3,33 +3,33 @@ export const config = {
   runtime: 'edge', // Enable Edge Runtime
 };
 
-const streamOllama = async (model, messages) => {
+const callOllama = async (model, messages) => {
   const url = process.env.OLLAMA_URL + "/api/generate";
+  
+  // Format the messages into a single prompt for the /generate endpoint
+  let prompt = "";
+  messages.forEach(msg => {
+    if (msg.role === "system") {
+      prompt += "System: " + msg.content + "\n\n";
+    } else if (msg.role === "user") {
+      prompt += "User: " + msg.content + "\n\n";
+    } else if (msg.role === "assistant") {
+      prompt += "Assistant: " + msg.content + "\n\n";
+    }
+  });
+  
+  prompt += "Assistant: ";
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
-      messages,
-      stream: true,
+      prompt,
+      stream: false  // Don't stream the response
     }),
   });
-  return response;
-};
-
-const streamOpenAI = async (model, messages, apiKey) => {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true,
-    }),
-  });
+  
   return response;
 };
 
@@ -93,8 +93,19 @@ export default async function handler(req) {
     messages.push({ role: "user", content: message });
 
     let response;
+    let responseText;
+
     if (aiMode === 'local') {
-      response = await streamOllama(model, messages);
+      response = await callOllama(model, messages);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ollama error: ${errorText}`);
+      }
+      
+      const ollamaResponse = await response.json();
+      responseText = ollamaResponse.response || "No response from AI";
+      
     } else {
       response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -104,20 +115,25 @@ export default async function handler(req) {
         },
         body: JSON.stringify({ model, messages }),
       });
-    }
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`AI service error: ${errorText}`);
     }
 
-    const responseData = await response.json();
-   
-
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI error: ${errorText}`);
+    }
     
-    return new Response(JSON.stringify({ text: responseData.choices?.[0]?.message?.content || "No response from AI" }), {
+    const openaiResponse = await response.json();
+    responseText = openaiResponse.choices?.[0]?.message?.content || "No response from AI";
+    }
+
+    return new Response(JSON.stringify({ text: responseText }), {
       headers: { 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     console.error('🔴 [SERVER] Error i LLM handler:', error);
     return new Response(JSON.stringify({ error: error.message || 'Failed to process request' }), {
