@@ -44,7 +44,7 @@ You need either:
   - Ensure it is running at http://localhost:11434
 - OpenAI API (Remote AI model)
   - Get an OpenAI API Key: OpenAI Platform
-  - Set AI_MODE=remote and provide your API key in .env.local
+  - Set AI_MODE=remote and provide your API key in .env
 
 ### Clone the Repository
 ```bash
@@ -123,13 +123,6 @@ This will load Insulin (P01308) into the Protein Viewer.
 * What happens if a protein misfolds?
 * Where is the active site of this protein?
 * What do the different colors in the visualization mean?
-
-## Learn More
-To learn more about Next.js, visit:
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Next.js GitHub](https://github.com/vercel/next.js)
-- [Next.js Interactive Tutorial](https://nextjs.org/learn)
 
 ## License
 This project is licensed under the MIT License.
